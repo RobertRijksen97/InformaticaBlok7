@@ -7,6 +7,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
+import java.util.HashMap;
 
 
 class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowListener {
@@ -22,6 +23,9 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
     private static ButtonGroup blastTypeProt, blastTypeNt;
     private static int orfSelected = 0, dbOrfSelected = 0, dbBlastResSelected = 0, blastResSelected = 0, panelstate;
     private static File path;
+//    private static HashMap<OrfResultaat> orfResultaat, dbOrfResultaat;
+//    private static HashMap<BlastResultaat> blastResultaat, dbBlastResultaat;
+
 
     public static void main(String[] args) {
         OrfFinder frame = new OrfFinder();
@@ -206,6 +210,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
         selectAllOrfBt = new JButton("Select all");
         selectAllOrfBt.addActionListener(this);
+        selectAllOrfBt.setEnabled(false);
         orfInfoPnl.add(selectAllOrfBt, getConstraints(GridBagConstraints.NONE, 1, 1, 0, 0,
                 0, 0, 0, 0, new Insets(5, 5, 0, 0), GridBagConstraints.LINE_START));
 
@@ -298,7 +303,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
         blastResultsPnl.add(selectAllBlastBt, getConstraints(GridBagConstraints.NONE, 1, 1, 2, 0,
                 0, 0, 0, 0, new Insets(0, 15, 15, 0), GridBagConstraints.LINE_START));
 
-        blastNrSelectedLb = new JLabel("Now performing a BLAST search");
+        blastNrSelectedLb = new JLabel();
         blastResultsPnl.add(blastNrSelectedLb, getConstraints(GridBagConstraints.NONE, 4, 1, 2, 0,
                 0, 0, 0, 0, new Insets(0, 0, 15, 0), GridBagConstraints.CENTER));
 
@@ -315,120 +320,127 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
     }
 
     private void makeDatabaseFrame() {
-        databaseBt.setEnabled(false);
-        databaseFrame = new JFrame("Database");
-        databaseFrame.setPreferredSize(new Dimension(825, 575));
-        databaseFrame.setMinimumSize(new Dimension(650, 575));
-        databaseFrame.addWindowListener(this);
-        Container window = new Container();
-        window.setLayout(new GridBagLayout());
+        Thread makeDatabase = new Thread(() -> {
+            System.out.println("ophalen database");
+//ophalen database
+            SwingUtilities.invokeLater(() -> {
+                databaseBt.setEnabled(false);
+                databaseFrame = new JFrame("Database");
+                databaseFrame.setPreferredSize(new Dimension(825, 575));
+                databaseFrame.setMinimumSize(new Dimension(650, 575));
+                databaseFrame.addWindowListener(this);
+                Container window = new Container();
+                window.setLayout(new GridBagLayout());
 
-        JButton searchBt = new JButton("Search description/ORF ID");
-        window.add(searchBt, getConstraints(GridBagConstraints.NONE, 1, 1, 0, 1,
-                0, 0, 0, 0, new Insets(15, 10, 0, 0), GridBagConstraints.LINE_START));
+                JButton searchBt = new JButton("Search description/ORF ID");
+                window.add(searchBt, getConstraints(GridBagConstraints.NONE, 1, 1, 0, 1,
+                        0, 0, 0, 0, new Insets(15, 10, 0, 0), GridBagConstraints.LINE_START));
 
-        JTextField searchTf = new JTextField(20);
-        window.add(searchTf, getConstraints(GridBagConstraints.HORIZONTAL, 1, 1, 0, 0,
-                0, 0, 0, 0, new Insets(15, 15, 0, 0), GridBagConstraints.LINE_END));
+                JTextField searchTf = new JTextField(20);
+                window.add(searchTf, getConstraints(GridBagConstraints.HORIZONTAL, 1, 1, 0, 0,
+                        0, 0, 0, 0, new Insets(15, 15, 0, 0), GridBagConstraints.LINE_END));
 
-        databaseEntryBox = new JComboBox<>(new String[]{"Found ORFs", "BLAST results"});
-        databaseEntryBox.addActionListener(this);
-        window.add(databaseEntryBox, getConstraints(GridBagConstraints.NONE, 2, 1, 0, 2,
-                0, 0, 0, 0, new Insets(15, 0, 0, 15), GridBagConstraints.CENTER));
+                databaseEntryBox = new JComboBox<>(new String[]{"Found ORFs", "BLAST results"});
+                databaseEntryBox.addActionListener(this);
+                window.add(databaseEntryBox, getConstraints(GridBagConstraints.NONE, 2, 1, 0, 2,
+                        0, 0, 0, 0, new Insets(15, 0, 0, 15), GridBagConstraints.CENTER));
 
-        tabelPnl = new JPanel();
-        tabelPnl.setLayout(new GridBagLayout());
-        tabelPnl.setBackground(Color.gray);
-        window.add(tabelPnl, getConstraints(GridBagConstraints.BOTH, 4, 1, 1, 0,
-                0, 0, 1, 1, new Insets(10, 15, 10, 15), GridBagConstraints.LINE_START));
+                tabelPnl = new JPanel();
+                tabelPnl.setLayout(new GridBagLayout());
+                tabelPnl.setBackground(Color.gray);
+                window.add(tabelPnl, getConstraints(GridBagConstraints.BOTH, 4, 1, 1, 0,
+                        0, 0, 1, 1, new Insets(10, 15, 10, 15), GridBagConstraints.LINE_START));
 
-        databaseOrfTb = new JTable(new DefaultTableModel(new Object[][]{{"", "orf1", "+", "2", "1020", "12344", "1432432", "click orf sequence", "click total sequence"}, {"", "orf2", "-", "1", "3202", "34298", "473289", "click orf sequence", "click total sequence"}}, new String[]{"Select", "ORF ID", "Strand", "Frame", "Length", "Start position", "Stop position", "ORF sequence", "Total sequence"}));
-        databaseOrfTb.setAutoCreateRowSorter(true);
-        databaseOrfTb.setDefaultEditor(Object.class, null);
-        databaseOrfTb.getTableHeader().setReorderingAllowed(false);
-        databaseOrfTb.getColumn("Select").setMaxWidth(50);
-        databaseOrfTb.getColumn("ORF ID").setMaxWidth(60);
-        databaseOrfTb.getColumn("Strand").setMaxWidth(60);
-        databaseOrfTb.getColumn("Frame").setMaxWidth(60);
-        databaseOrfTb.getColumn("Length").setMaxWidth(70);
-        databaseOrfTb.addMouseListener(this);
+                databaseOrfTb = new JTable(new DefaultTableModel(new Object[][]{{"", "orf1", "+", "2", "1020", "12344", "1432432", "click orf sequence", "click total sequence"}, {"", "orf2", "-", "1", "3202", "34298", "473289", "click orf sequence", "click total sequence"}}, new String[]{"Select", "ORF ID", "Strand", "Frame", "Length", "Start position", "Stop position", "ORF sequence", "Total sequence"}));
+                databaseOrfTb.setAutoCreateRowSorter(true);
+                databaseOrfTb.setDefaultEditor(Object.class, null);
+                databaseOrfTb.getTableHeader().setReorderingAllowed(false);
+                databaseOrfTb.getColumn("Select").setMaxWidth(50);
+                databaseOrfTb.getColumn("ORF ID").setMaxWidth(60);
+                databaseOrfTb.getColumn("Strand").setMaxWidth(60);
+                databaseOrfTb.getColumn("Frame").setMaxWidth(60);
+                databaseOrfTb.getColumn("Length").setMaxWidth(70);
+                databaseOrfTb.addMouseListener(this);
 
-        dbOrfSp = new JScrollPane(databaseOrfTb);
-        tabelPnl.add(dbOrfSp, getConstraints(GridBagConstraints.BOTH, 1, 1, 1, 0,
-                0, 0, 1, 1, new Insets(5, 5, 5, 5), GridBagConstraints.FIRST_LINE_START));
+                dbOrfSp = new JScrollPane(databaseOrfTb);
+                tabelPnl.add(dbOrfSp, getConstraints(GridBagConstraints.BOTH, 1, 1, 1, 0,
+                        0, 0, 1, 1, new Insets(5, 5, 5, 5), GridBagConstraints.FIRST_LINE_START));
 
-        databaseBlastTb = new JTable(new DefaultTableModel(new Object[][]{{"", "orf1", "4*e", "kat", "gaaf eiwit dit hoor", "click for sequence"}, {"", "orf2", "7.54*e", "coole hond", "Deze doet ook dingen", "click for sequence"}}, new String[]{"Select", "ORF ID", "E-value", "Organism", "Description", "Sequence"}));
-        databaseBlastTb.setAutoCreateRowSorter(true);
-        databaseBlastTb.setDefaultEditor(Object.class, null);
-        databaseBlastTb.addMouseListener(this);
-        databaseBlastTb.getTableHeader().setReorderingAllowed(false);
-        databaseBlastTb.getColumn("Select").setMaxWidth(50);
-        databaseBlastTb.getColumn("ORF ID").setMaxWidth(60);
-        databaseBlastTb.getColumn("E-value").setMaxWidth(60);
+                databaseBlastTb = new JTable(new DefaultTableModel(new Object[][]{{"", "orf1", "4*e", "kat", "gaaf eiwit dit hoor", "click for sequence"}, {"", "orf2", "7.54*e", "coole hond", "Deze doet ook dingen", "click for sequence"}}, new String[]{"Select", "ORF ID", "E-value", "Organism", "Description", "Sequence"}));
+                databaseBlastTb.setAutoCreateRowSorter(true);
+                databaseBlastTb.setDefaultEditor(Object.class, null);
+                databaseBlastTb.addMouseListener(this);
+                databaseBlastTb.getTableHeader().setReorderingAllowed(false);
+                databaseBlastTb.getColumn("Select").setMaxWidth(50);
+                databaseBlastTb.getColumn("ORF ID").setMaxWidth(60);
+                databaseBlastTb.getColumn("E-value").setMaxWidth(60);
 
-        dbSeqPnl = new JPanel();
-        dbSeqPnl.setLayout(new GridBagLayout());
-        dbSeqPnl.setBackground(Color.gray);
-        dbSeqPnl.setPreferredSize(new Dimension(670, 300));
-        dbSeqPnl.setVisible(false);
-        window.add(dbSeqPnl, getConstraints(GridBagConstraints.BOTH, 4, 1, 1, 0,
-                0, 0, 1, 1, new Insets(10, 15, 10, 15), GridBagConstraints.LINE_START));
+                dbSeqPnl = new JPanel();
+                dbSeqPnl.setLayout(new GridBagLayout());
+                dbSeqPnl.setBackground(Color.gray);
+                dbSeqPnl.setPreferredSize(new Dimension(670, 300));
+                dbSeqPnl.setVisible(false);
+                window.add(dbSeqPnl, getConstraints(GridBagConstraints.BOTH, 4, 1, 1, 0,
+                        0, 0, 1, 1, new Insets(10, 15, 10, 15), GridBagConstraints.LINE_START));
 
-        JLabel orfNameLb = new JLabel("ORF nr test");
-        dbSeqPnl.add(orfNameLb, getConstraints(GridBagConstraints.NONE, 2, 1, 0, 0,
-                0, 0, 0, 0, new Insets(5, 0, 0, 0), GridBagConstraints.CENTER));
+                JLabel orfNameLb = new JLabel("ORF nr test");
+                dbSeqPnl.add(orfNameLb, getConstraints(GridBagConstraints.NONE, 2, 1, 0, 0,
+                        0, 0, 0, 0, new Insets(5, 0, 0, 0), GridBagConstraints.CENTER));
 
-        dbGoBackBt = new JButton("Back");
-        dbGoBackBt.addActionListener(this);
-        dbSeqPnl.add(dbGoBackBt, getConstraints(GridBagConstraints.NONE, 1, 1, 0, 1,
-                0, 0, 0, 0, new Insets(5, 0, 0, 5), GridBagConstraints.LINE_END));
+                dbGoBackBt = new JButton("Back");
+                dbGoBackBt.addActionListener(this);
+                dbSeqPnl.add(dbGoBackBt, getConstraints(GridBagConstraints.NONE, 1, 1, 0, 1,
+                        0, 0, 0, 0, new Insets(5, 0, 0, 5), GridBagConstraints.LINE_END));
 
-        JLabel aminoSeqLb = new JLabel("Amino acid sequence:");
-        dbSeqPnl.add(aminoSeqLb, getConstraints(GridBagConstraints.NONE, 1, 1, 1, 0,
-                0, 0, 0, 0, new Insets(10, 5, 2, 0), GridBagConstraints.LINE_START));
+                JLabel aminoSeqLb = new JLabel("Amino acid sequence:");
+                dbSeqPnl.add(aminoSeqLb, getConstraints(GridBagConstraints.NONE, 1, 1, 1, 0,
+                        0, 0, 0, 0, new Insets(10, 5, 2, 0), GridBagConstraints.LINE_START));
 
-        JTextArea aminoSeqTxtArea = new JTextArea("AMINOZUREN EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCG");
-        aminoSeqTxtArea.setLineWrap(true);
-        JScrollPane scrollPane2 = new JScrollPane(aminoSeqTxtArea);
-        dbSeqPnl.add(scrollPane2, getConstraints(GridBagConstraints.BOTH, 2, 1, 2, 0,
-                0, 0, 1, 1, new Insets(5, 0, 0, 0), GridBagConstraints.LINE_START));
+                JTextArea aminoSeqTxtArea = new JTextArea("AMINOZUREN EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCGEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEFDASFDASFDSAGTGRQGRQGGGCCWGCWGWCGCWGWCGWGWGCWCGCGGWCGWCWCGWGGCGCWCG");
+                aminoSeqTxtArea.setLineWrap(true);
+                JScrollPane scrollPane2 = new JScrollPane(aminoSeqTxtArea);
+                dbSeqPnl.add(scrollPane2, getConstraints(GridBagConstraints.BOTH, 2, 1, 2, 0,
+                        0, 0, 1, 1, new Insets(5, 0, 0, 0), GridBagConstraints.LINE_START));
 
-        JLabel nuclSeqLb = new JLabel("Nucleotide sequence:");
-        dbSeqPnl.add(nuclSeqLb, getConstraints(GridBagConstraints.NONE, 1, 1, 3, 0,
-                0, 0, 0, 0, new Insets(10, 5, 2, 0), GridBagConstraints.LINE_START));
+                JLabel nuclSeqLb = new JLabel("Nucleotide sequence:");
+                dbSeqPnl.add(nuclSeqLb, getConstraints(GridBagConstraints.NONE, 1, 1, 3, 0,
+                        0, 0, 0, 0, new Insets(10, 5, 2, 0), GridBagConstraints.LINE_START));
 
-        JTextArea nuclSeqTxtArea = new JTextArea("NUCLEOTIDEn ACGTCGAAAATTTTTTTTTTTTTTTGCGCCGGGGGGGGCAGGGGGTTTTTTTTTTTTTTTTTTTTTTTTTTGAGAGTGAACGTCGGCGGCCGCCTCCGCGCGCGTCGCGCGGCCGCGGCCGATACGTCAGTCAGTCAGTCAGTCAGTCAG");
-        nuclSeqTxtArea.setLineWrap(true);
-        JScrollPane scrollPane3 = new JScrollPane(nuclSeqTxtArea);
-        dbSeqPnl.add(scrollPane3, getConstraints(GridBagConstraints.BOTH, 2, 1, 4, 0,
-                0, 0, 1, 1, new Insets(5, 0, 0, 0), GridBagConstraints.LINE_START));
+                JTextArea nuclSeqTxtArea = new JTextArea("NUCLEOTIDEn ACGTCGAAAATTTTTTTTTTTTTTTGCGCCGGGGGGGGCAGGGGGTTTTTTTTTTTTTTTTTTTTTTTTTTGAGAGTGAACGTCGGCGGCCGCCTCCGCGCGCGTCGCGCGGCCGCGGCCGATACGTCAGTCAGTCAGTCAGTCAGTCAG");
+                nuclSeqTxtArea.setLineWrap(true);
+                JScrollPane scrollPane3 = new JScrollPane(nuclSeqTxtArea);
+                dbSeqPnl.add(scrollPane3, getConstraints(GridBagConstraints.BOTH, 2, 1, 4, 0,
+                        0, 0, 1, 1, new Insets(5, 0, 0, 0), GridBagConstraints.LINE_START));
 
 
-        dbBlastSp = new JScrollPane(databaseBlastTb);
-        tabelPnl.add(dbBlastSp, getConstraints(GridBagConstraints.BOTH, 1, 1, 1, 0,
-                0, 0, 1, 1, new Insets(5, 5, 5, 5), GridBagConstraints.FIRST_LINE_START));
+                dbBlastSp = new JScrollPane(databaseBlastTb);
+                tabelPnl.add(dbBlastSp, getConstraints(GridBagConstraints.BOTH, 1, 1, 1, 0,
+                        0, 0, 1, 1, new Insets(5, 5, 5, 5), GridBagConstraints.FIRST_LINE_START));
 
-        dbOrfNrSelectedLb = new JLabel("0 ORF(s) selected");
-        window.add(dbOrfNrSelectedLb, getConstraints(GridBagConstraints.NONE, 4, 1, 2, 0,
-                0, 0, 0, 0, new Insets(0, 0, 15, 0), GridBagConstraints.CENTER));
+                dbOrfNrSelectedLb = new JLabel("0 ORF(s) selected");
+                window.add(dbOrfNrSelectedLb, getConstraints(GridBagConstraints.NONE, 4, 1, 2, 0,
+                        0, 0, 0, 0, new Insets(0, 0, 15, 0), GridBagConstraints.CENTER));
 
-        dbBlastNrSelectedLb = new JLabel("0 BLAST result(s) selected");
-        dbBlastNrSelectedLb.setVisible(false);
-        window.add(dbBlastNrSelectedLb, getConstraints(GridBagConstraints.NONE, 4, 1, 2, 0,
-                0, 0, 0, 0, new Insets(0, 0, 15, 0), GridBagConstraints.CENTER));
+                dbBlastNrSelectedLb = new JLabel("0 BLAST result(s) selected");
+                dbBlastNrSelectedLb.setVisible(false);
+                window.add(dbBlastNrSelectedLb, getConstraints(GridBagConstraints.NONE, 4, 1, 2, 0,
+                        0, 0, 0, 0, new Insets(0, 0, 15, 0), GridBagConstraints.CENTER));
 
-        dbSelectAllBt = new JButton("Select all");
-        dbSelectAllBt.addActionListener(this);
-        window.add(dbSelectAllBt, getConstraints(GridBagConstraints.NONE, 1, 1, 2, 0,
-                0, 0, 0, 0, new Insets(0, 15, 15, 0), GridBagConstraints.LINE_START));
+                dbSelectAllBt = new JButton("Select all");
+                dbSelectAllBt.addActionListener(this);
+                window.add(dbSelectAllBt, getConstraints(GridBagConstraints.NONE, 1, 1, 2, 0,
+                        0, 0, 0, 0, new Insets(0, 15, 15, 0), GridBagConstraints.LINE_START));
 
-        JButton deleteBt = new JButton("Delete selected");
-        window.add(deleteBt, getConstraints(GridBagConstraints.NONE, 1, 1, 2, 3,
-                0, 0, 0, 0, new Insets(0, 0, 15, 15), GridBagConstraints.LINE_END));
+                JButton deleteBt = new JButton("Delete selected");
+                window.add(deleteBt, getConstraints(GridBagConstraints.NONE, 1, 1, 2, 3,
+                        0, 0, 0, 0, new Insets(0, 0, 15, 15), GridBagConstraints.LINE_END));
 
-        databaseFrame.setContentPane(window);
-        databaseFrame.pack();
-        databaseFrame.setVisible(true);
+                databaseFrame.setContentPane(window);
+                databaseFrame.pack();
+                databaseFrame.setVisible(true);
+            });
+        });
+        makeDatabase.start();
     }
 
     private GridBagConstraints getConstraints(int fill, int gridwidth, int gridheight, int gridy, int gridx, int ipady,
@@ -449,6 +461,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
     }
 
     private void blastClicked(int blastType) {
+        blastNrSelectedLb.setText("Now performing a BLAST search");
         blastProtBt.setEnabled(false);
         blastNtBt.setEnabled(false);
         panelstate = 1;
@@ -459,26 +472,37 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
         blastResultsPnl.setVisible(true);
         orfInfoPnl.setVisible(false);
         orfExtInfPnl.setVisible(false);
-        // START EEN NIUEWE THREAD
-//        Object[][] blastResults = blastSearch(blastType);
-
         DefaultTableModel dm = (DefaultTableModel) blastTable.getModel();
         dm.getDataVector().removeAllElements();
-
-        Object[][] blastResults = {{"", "orf1", "4*e", "kat", "gaaf eiwit dit hoor", "click for sequence"}, {"", "orf2", "7.54*e", "coole hond", "Deze doet ook dingen", "click for sequence"}, {"", "orf1", "4*e", "kat", "gaaf eiwit dit hoor", "click for sequence"}, {"", "orf2", "7.54*e", "coole hond", "Deze doet ook dingen", "click for sequence"}};
-        for (Object[] rowData : blastResults) {
-            dm.addRow(rowData);
-        }
         dm.fireTableDataChanged();
-        searchBt.setVisible(true);
-        searchTf.setVisible(true);
-        selectAllBlastBt.setVisible(true);
-        blastResSelected = 0;
-        blastNrSelectedLb.setText("0 BLAST result(s) selected");
+
+        Thread blast = new Thread(() -> {
+            System.out.println("hij doet iets lit");
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+//            Object[][] blastResults = blastSearch(blastType);
+            Object[][] blastResults = {{"", "orf1", "4*e", "kat", "gaaf eiwit dit hoor", "click for sequence"}, {"", "orf2", "7.54*e", "coole hond", "Deze doet ook dingen", "click for sequence"}, {"", "orf1", "4*e", "kat", "gaaf eiwit dit hoor", "click for sequence"}, {"", "orf2", "7.54*e", "coole hond", "Deze doet ook dingen", "click for sequence"}};
+//                //update hashmap
+            SwingUtilities.invokeLater(() -> {
+                DefaultTableModel dm1 = (DefaultTableModel) blastTable.getModel();
+                for (Object[] rowData : blastResults) {
+                    dm1.addRow(rowData);
+                }
+                dm1.fireTableDataChanged();
+                searchBt.setVisible(true);
+                searchTf.setVisible(true);
+                selectAllBlastBt.setVisible(true);
+                blastResSelected = 0;
+                blastNrSelectedLb.setText("0 BLAST result(s) selected");
+            });
+        });
+        blast.start();
     }
 
     private Object[][] blastSearch(int blastType) {
-//        private Object[][] blastSearch(int blastType){
         String blast = "";
         String database = "";
         if (blastType == 1) {
@@ -542,8 +566,9 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
             return;
         try {
             databaseFrame.dispose();
-        } catch (NullPointerException ignore) {}
-databaseBt.setEnabled(true);
+        } catch (NullPointerException ignore) {
+        }
+        databaseBt.setEnabled(true);
     }
 
     private void startOrf() {
@@ -554,28 +579,43 @@ databaseBt.setEnabled(true);
         orfInfoPnl.setVisible(true);
         orfExtInfPnl.setVisible(false);
         blastResultsPnl.setVisible(false);
+        nrSelectedLb.setText("Determining ORFs");
         panelstate = 0;
 
         DefaultTableModel dm = (DefaultTableModel) orfInfoTb.getModel();
         dm.getDataVector().removeAllElements();
-        Object[][] tableData = {{"", 22385, "-", 3, 1988550, 20, 287000, "Click for sequence"}, {"", 1, "+", 1, 254230, 230, 434280, "Click for extra info"}, {"", 24, "+", 2, 66666366, 33333, 999999, "Click for extra info"}
-                , {"", 287523, "-", 3, 432, 20, 2000, "Click for extra info"}, {"", 1, "+", 1, 250, 230, 4804, "Click for extra info"}, {"", 24, "+", 2, 6666666, 3334333, 999999, "Click for extra info"}
-                , {"", 223, "-", 3, 197680, 20, 2000, "Click for extra info"}, {"", 1, "+", 1, 254765320, 230, 480, "Click for extra info"}, {"", 24, "+", 2, 62466666, 33333, 999999, "Click for extra info"}
-                , {"", 223, "-", 3, 1980, 2580, 200870, "Click for extra info"}, {"", 1, "+", 1, 250, 230, 480, "Click for extra info"}, {"", 24, "+", 2, 664266666, 33333, 999432999, "Click for extra info"}
-                , {"", 223, "-", 3, 198340, 20, 204200, "Click for extra info"}, {"", 1, "+", 1, 250432, 230, 480, "Click for extra info"}, {"", 24, "+", 2, 6666666, 33333, 999999, "Click for extra info"}
-                , {"", 223, "-", 3, 198580, 20, 2000, "Click for extra info"}, {"", 1, "+", 1, 250, 230, 480, "Click for extra info"}, {"", 24, "+", 2, 6666666, 33423333, 999999, "Click for extra info"}
-                , {"", 223, "-", 3, 1234980, 20, 2043200, "Click for extra info"}, {"", 1, "+", 1, 250, 230, 480, "Click for extra info"}, {"", 24, "+", 2, 6666666, 33333, 999999, "Click for extra info"}
-                , {"", 223, "-", 3, 1975880, 20, 2000, "Click for extra info"}, {"", 1, "+", 1, 250, 230, 480, "Click for extra info"}, {"", 24, "+", 2, 6666666, 33333, 999999, "Click for extra info"}};
-        // NEW THREAD
-        // Object[][] tableData = determineOrfs();
-        for (Object[] rowData : tableData) {
-            dm.addRow(rowData);
-        }
         dm.fireTableDataChanged();
-        orfSelected = 0;
-        nrSelectedLb.setText("0 ORF(s) selected");
-        blastProtBt.setEnabled(true);
-        blastNtBt.setEnabled(true);
+
+        Thread calculateOrfs = new Thread(() -> {
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            // Object[][] tableData = determineOrfs();
+            //update hashmap
+            Object[][] tableData = {{"", 22385, "-", 3, 1988550, 20, 287000, "Click for sequence"}, {"", 1, "+", 1, 254230, 230, 434280, "Click for extra info"}, {"", 24, "+", 2, 66666366, 33333, 999999, "Click for extra info"}
+                    , {"", 287523, "-", 3, 432, 20, 2000, "Click for extra info"}, {"", 1, "+", 1, 250, 230, 4804, "Click for extra info"}, {"", 24, "+", 2, 6666666, 3334333, 999999, "Click for extra info"}
+                    , {"", 223, "-", 3, 197680, 20, 2000, "Click for extra info"}, {"", 1, "+", 1, 254765320, 230, 480, "Click for extra info"}, {"", 24, "+", 2, 62466666, 33333, 999999, "Click for extra info"}
+                    , {"", 223, "-", 3, 1980, 2580, 200870, "Click for extra info"}, {"", 1, "+", 1, 250, 230, 480, "Click for extra info"}, {"", 24, "+", 2, 664266666, 33333, 999432999, "Click for extra info"}
+                    , {"", 223, "-", 3, 198340, 20, 204200, "Click for extra info"}, {"", 1, "+", 1, 250432, 230, 480, "Click for extra info"}, {"", 24, "+", 2, 6666666, 33333, 999999, "Click for extra info"}
+                    , {"", 223, "-", 3, 198580, 20, 2000, "Click for extra info"}, {"", 1, "+", 1, 250, 230, 480, "Click for extra info"}, {"", 24, "+", 2, 6666666, 33423333, 999999, "Click for extra info"}
+                    , {"", 223, "-", 3, 1234980, 20, 2043200, "Click for extra info"}, {"", 1, "+", 1, 250, 230, 480, "Click for extra info"}, {"", 24, "+", 2, 6666666, 33333, 999999, "Click for extra info"}
+                    , {"", 223, "-", 3, 1975880, 20, 2000, "Click for extra info"}, {"", 1, "+", 1, 250, 230, 480, "Click for extra info"}, {"", 24, "+", 2, 6666666, 33333, 999999, "Click for extra info"}};
+
+            SwingUtilities.invokeLater(() -> {
+                for (Object[] rowData : tableData) {
+                    dm.addRow(rowData);
+                }
+                dm.fireTableDataChanged();
+                orfSelected = 0;
+                nrSelectedLb.setText("0 ORF(s) selected");
+                selectAllOrfBt.setEnabled(true);
+                blastProtBt.setEnabled(true);
+                blastNtBt.setEnabled(true);
+            });
+        });
+        calculateOrfs.start();
     }
 
 //    private void tabelAction(JTable table, int selected, JLabel label, JPanel panelOn, JPanel panelOff, int[] back) {
