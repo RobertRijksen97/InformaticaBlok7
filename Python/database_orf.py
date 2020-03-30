@@ -43,8 +43,9 @@ def database_update(table, info):
         user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
         db="rohtv", password='pwd123')
     cursor = conn.cursor()
-    tup_info = tuple(info)
-    cursor.execute(f"""insert into {table} value {tup_info};""")
+    new_info = ", ".join(repr(e) for e in info)
+    cursor.execute(f"""insert into {table} value ({new_info});""")
+    conn.commit()
 
 
 def database_organism_checker(organism):
@@ -62,12 +63,15 @@ def database_organism_checker(organism):
     cursor.execute(f"select Organisme_ID from organisme where Organisme_Naam "
                    f"like '{organism}';")
     try:
+        print('hi')
         return cursor.fetchall()[0][0]
     except IndexError:
         cursor.execute("select max(Organisme_ID) from organisme;")
         new_id = cursor.fetchall()[0][0] + 1
-        new_info = (new_id, organism)
-        cursor.execute(f"""insert into organisme value {new_info};""")
+        info = [new_id, organism]
+        new_info = ", ".join(repr(e) for e in info)
+        cursor.execute(f"""insert into organisme value ({new_info});""")
+        conn.commit()
         return new_id
 
 
