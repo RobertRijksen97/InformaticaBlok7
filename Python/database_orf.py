@@ -18,7 +18,8 @@ def database_collect(table):
     De functie database_collect haalt alle informatie op uit de desbetreffende
     table
     :param table: De table waaruit alles opgehaald moet worden.
-    ":return None
+    ":return De string_builder, hierin staat alles in de juiste format om te
+            visualiseren in de gui table
     """
     conn = mysql.connector.connect(
         host="hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com",
@@ -27,8 +28,12 @@ def database_collect(table):
     cursor = conn.cursor()
     cursor.execute(f"""select * from {table}""")
     rows = cursor.fetchall()
+    string_builder = ""
     for x in rows:
-        print(x)
+        new_string = '\t'.join(str(b) for b in x)
+        string_builder += new_string + "\n"
+
+    return string_builder
 
 
 def database_update(table, info):
@@ -63,7 +68,6 @@ def database_organism_checker(organism):
     cursor.execute(f"select Organisme_ID from organisme where Organisme_Naam "
                    f"like '{organism}';")
     try:
-        print('hi')
         return cursor.fetchall()[0][0]
     except IndexError:
         cursor.execute("select max(Organisme_ID) from organisme;")
@@ -103,3 +107,38 @@ def database_blastid_checker():
     cursor = conn.cursor()
     cursor.execute("select max(BLAST_ID) from blastresultsorf;")
     return cursor.fetchall()[0][0]
+
+
+def database_delete(sort_id, number_id):
+    """
+    Deze functie database_delete heeft als functie om een row uit de database
+    te verwijderen
+    :param sort_id: Welk soort ID je wilt verwijderen, dus bijvoorbeeld
+           blast_id of een orf_id
+    :param number_id: Het ID in int vorm.
+    :return: None
+    """
+    conn = mysql.connector.connect(
+        host="hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com",
+        user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
+        db="rohtv", password='pwd123')
+    cursor = conn.cursor()
+    cursor.execute(f"delete from blastresultsorf where {sort_id} like "
+                   f"{number_id};")
+    conn.commit()
+
+
+def string_to_list_converter(string):
+    """
+    Deze functie string_to_list_converter, maakt de string die gescheiden is
+    met een tab en bij het eind van de string een enter, weer om naar een list.
+    Dit is gedaan om het opslaan van de resultaten makkelijker te maken
+    :param string: De string met alle resultaten
+    :return: De list
+    """
+    results_list = []
+    string_list = string.replace("\n", ",").split(",")
+    for i in range(len(string_list)):
+        new_i = string_list[i].replace("\t", ",").split(",")
+        results_list.append(new_i)
+    return results_list

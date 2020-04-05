@@ -6,11 +6,10 @@ import database_orf
 
 def main():
     sequentie = "MPPRLKTSMKYKENRLKSFEEGVKLPGGKRKVYWFDNNDEKIIEPLIECGFYYAPVKSNFSQIICSFCGQPETIEDNLDIKVLLEDHYNKNNNCSLSLIMLSGLENNKKSSKETSFNYWSNHKVNVLKDPLSKESFKFRLNFFNKKYPLDKLRNFKLNSKKLSESGFIYSPFFENDDRVSCYYCNCSLEGWEEYDDPIEEHKKNHNLYCYFLDVYSQKYDGKANAESEIKKLNNDDNIKEDIKRNGKTDHFGRLSEGKEESEGEEDENEPERIEEQKEVKEKETNNMIKDSPIISSNKKPVASVQSESVSAKKTDKDNSEIQNKSLLDATNKNSVKNNSSRSIVYIDDDVALNSNDDEVSFDDLSDFDDKIYSQEQEESSPEPSQPIRRSKRLTKIRAQKDPNDDYWNKLPDRDLYNELMGKKSKSKDNISDSKSESEFEFYDDNLSEEEILETDDASFEPDPPTPPRAINSRLRPAKKQTKNAKEDTDSPDELSPLPSNGSSYSDLITKIEPGASAGISSKLNRKQNKKKIKETIRQAVTDAATESEPVASSYSSPTKQNPAQKESSSIVLSKTPSLSPLQNINDTNDIQKKRLSANELSTGIELDLKSPRKFKKIKLVNKGYSPSPPVYDISDQNLGDYDESNLKFLENNIKPVNIDSLFLKTAKGPALKNDKDIEIDKYQPKSSPIKLNPSNTLTSGLKSKAKSKIIKPLPHSKQSKQKYNILDMSFDDEAFVVSSNKFISIQKRNNEIVPVSTRKKSISEKIPKSTILDNERDQSKVSPPKEQGSSKLDNACIKEDMDKHYSKKNNHPNKRNNFNNDNGHFSIDDSLPSDVSGSTDIESVISQFKKETSLKNYVQIESIKDVASDINKDGSDEEQREVEGAKNDDVRYGAVDELNSISNKEEVEDKFQHNVSRLQRDNDDVESSGVDKGKLVHVSNVQTNPESPTLSDNATQNKGESTITPAISDEKVNQINKNDDDTFDISNSPSIYADYIQDIKEINNEILKSLEIFTNDEDSEGMDEHDNDLKKGEQDSNSNGLSNQDHIGDALDEELLDLANPNANINTSVQLSKDSTNRSIKQIEVDKAVNINYGAEIKSDREKSIQKEEIYKGENHQEQHIIQSSEDNIKETYYLKKDADLTNGGRSSHEDNKELSNYQTSNFKIQDSLPQNGDFINLDKSRHVDSSDNRSSEISLAEGEKLNGEENEIEGSTIDQPNKDINSADNKRSSRILNTETKLNQDISDPDAKDEARKEDDITNVEKSLVKEDSAVAVIRVDEDSNPEIKATDMIYKSKFNGNEVLDQEEKSLAKRDPSNDNVISITDNAIIKSFSKEDKQEIITTRKSKSPNAGITDLSGNFNALLEASTPERREDNPVISRAGKVPSENIDWVPISLSSLAETLHNFEDTANYLKTVATSENDLHNDYDSELTNFISAMPENEEYMTIQEWVKYSASNCGKLVKETCNDIIRVYELDYFRALNVLESLPTED"  # Huidige sequentie
-    header = "ORF 1"
-    BLASTp(sequentie, header)
+    BLASTp("blastp", "nr", sequentie)
 
 
-def BLASTp(sequentie, header):
+def BLASTp(programma, database, sequentie):
     """Deze functie BLAST de sequenties via BLASTx. Het print de dict en het
     schrijft de alignments weg naar een bestand m.b.v. Pickle.
     :param sequentie: Dit is de sequentie die geblast moet worden.
@@ -24,19 +23,24 @@ def BLASTp(sequentie, header):
     print('*BLAST1* ' * 3)  # Dit geeft aan bij welke BLAST hij is
 
     # Dit zijn de gegevens voor het BLASTen.
-    result_handle = NCBIWWW.qblast("blastp", "nr", sequentie,
+    result_handle = NCBIWWW.qblast(f"{programma}", f"{database}", sequentie,
                                    matrix_name="BLOSUM62",
                                    hitlist_size=20)
     # Dit leest de resultaten in
     read = SearchIO.parse(result_handle, 'blast-xml')
     list_result_all = []
     orf_id = database_orf.database_orf_checker('AT')
+    string_builder_table = ""
     for i in read:
         for hit in i:
             blast_id = database_orf.database_blastid_checker()
-            list_results = ['AT', hit.description, hit[0].evalue, orf_id,
-                            blast_id + 1]
+            list_results = [hit.accession, hit.description, hit[0].evalue,
+                            hit[0].ident_num, orf_id, blast_id + 1]
             scientific_name = re.search("\[([A-Z][a-z]+\s[a-z]+)", hit.description)
+            string_builder_table = hit.accession + '\t' + hit.description \
+                                   + '\t' + str(hit[0].evalue) + '\t' + \
+                                   str(hit[0].ident_num) + '\t' + str(orf_id) \
+                                   + '\t' + str(blast_id + 1) + '\n'
             if scientific_name:
                 organism_name = scientific_name.group().replace("[", "").replace("]", "")
                 organism_id = database_orf.database_organism_checker(organism_name)
@@ -48,6 +52,9 @@ def BLASTp(sequentie, header):
             list_result_all.append(list_results)
 
     print(list_result_all)
+    print(string_builder_table)
+
+    return list_result_all, string_builder_table
 
 
 main()
