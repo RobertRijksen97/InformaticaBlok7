@@ -1,3 +1,7 @@
+# Naam: Robert Rijksen
+# Functie: diverse functies voor de orf database
+# Datum: 06-04-2020
+
 import mysql.connector
 
 
@@ -95,6 +99,35 @@ def database_orf_checker(orf):
     return cursor.fetchall()[0][0]
 
 
+def database_dna_data_id_checker():
+    """
+    De functie database_dna_data
+    :return: 
+    """
+    conn = mysql.connector.connect(
+        host="hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com",
+        user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
+        db="rohtv", password='pwd123')
+    cursor = conn.cursor()
+    cursor.execute("select max(DNA_seq_ID) from dna_data;")
+    return cursor.fetchall()[0][0]
+
+
+def database_orf_id_checker():
+    """
+    De functie database_orf_id_checker haalt de laatste orf_id op uit de table
+    orfs
+    :return:de laatste orf_id
+    """
+    conn = mysql.connector.connect(
+        host="hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com",
+        user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
+        db="rohtv", password='pwd123')
+    cursor = conn.cursor()
+    cursor.execute(f"select max(ORFs_ID) from orfs;")
+    return cursor.fetchall()[0][0]
+
+
 def database_blastid_checker():
     """
     De functie database_blastID_checker haalt de blast_ID op uit de table
@@ -110,7 +143,7 @@ def database_blastid_checker():
     return cursor.fetchall()[0][0]
 
 
-def database_delete(sort_id, number_id):
+def database_delete(table, sort_id, number_id):
     """
     Deze functie database_delete heeft als functie om een row uit de database
     te verwijderen
@@ -124,7 +157,7 @@ def database_delete(sort_id, number_id):
         user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
         db="rohtv", password='pwd123')
     cursor = conn.cursor()
-    cursor.execute(f"delete from blastresultsorf where {sort_id} like "
+    cursor.execute(f"delete from {table} where {sort_id} like "
                    f"{number_id};")
     conn.commit()
 
@@ -144,5 +177,3 @@ def string_to_list_converter(string):
         results_list.append(new_i)
     return results_list
 
-results = database_collect("orfs")
-print(results)
