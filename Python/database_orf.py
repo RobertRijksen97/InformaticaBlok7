@@ -30,7 +30,6 @@ def database_collect(table):
         user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
         db="rohtv", password='pwd123')
     cursor = conn.cursor()
-    # cursor.execute(f"""select * from {table}""")
     cursor.execute(f"""select * from {table} join dna_data dd on 
                        orfs.DNA_seq_ID = dd.DNA_seq_ID;""")
     rows = cursor.fetchall()
@@ -40,6 +39,23 @@ def database_collect(table):
         string_builder += new_string + "\n"
 
     return string_builder
+
+
+def database_dna_collect(id):
+    """
+    De functie database_dna_collect haalt de DNA sequentie op uit dna table
+    :param id: de id die opgehaald moet worden
+    ":return de DNA sequentie
+    """
+    conn = mysql.connector.connect(
+        host="hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com",
+        user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
+        db="rohtv", password='pwd123')
+    cursor = conn.cursor()
+    # cursor.execute(f"""select * from {table}""")
+    cursor.execute(f"""select DNA_sequentie from dna_data where DNA_seq_ID 
+                       like {id};""")
+    return cursor.fetchall()[0][0]
 
 
 def database_update(table, info):
