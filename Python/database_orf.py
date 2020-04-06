@@ -26,7 +26,8 @@ def database_collect(table):
         user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
         db="rohtv", password='pwd123')
     cursor = conn.cursor()
-    cursor.execute(f"""select * from {table}""")
+    # cursor.execute(f"""select * from {table}""")
+    cursor.execute(f"""select * from {table} join dna_data dd on orfs.DNA_seq_ID = dd.DNA_seq_ID;""")
     rows = cursor.fetchall()
     string_builder = ""
     for x in rows:
@@ -142,3 +143,6 @@ def string_to_list_converter(string):
         new_i = string_list[i].replace("\t", ",").split(",")
         results_list.append(new_i)
     return results_list
+
+results = database_collect("orfs")
+print(results)
