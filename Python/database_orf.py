@@ -175,6 +175,10 @@ def string_to_list_converter(string):
     string_list = string.replace("\n", ",").split(",")
     for i in range(len(string_list)):
         new_i = string_list[i].replace("\t", ",").split(",")
-        results_list.append(new_i)
+        results_list.append([])
+        for x in range(len(new_i)):
+            try:
+                results_list[i].append(int(new_i[x]))
+            except ValueError:
+                results_list[i].append(new_i[x])
     return results_list
-

@@ -34,27 +34,26 @@ def BLASTp(programma, database, sequentie):
     for i in read:
         for hit in i:
             blast_id = database_orf.database_blastid_checker()
-            list_results = [hit.accession, hit.description, hit[0].evalue,
-                            hit[0].ident_num, orf_id, blast_id + 1]
-            scientific_name = re.search("\[([A-Z][a-z]+\s[a-z]+)", hit.description)
+            scientific_name = re.search("\[([A-Z][a-z]+\s[a-z]+)",
+                                        hit.description)
             string_builder_table = hit.accession + '\t' + hit.description \
                                    + '\t' + str(hit[0].evalue) + '\t' + \
                                    str(hit[0].ident_num) + '\t' + str(orf_id) \
-                                   + '\t' + str(blast_id + 1) + '\n'
+                                   + '\t' + str(blast_id + 1) + '\t'
             if scientific_name:
-                organism_name = scientific_name.group().replace("[", "").replace("]", "")
-                organism_id = database_orf.database_organism_checker(organism_name)
-                list_results.append(organism_id)
+                organism_name = scientific_name.group().replace("[", "")\
+                    .replace("]", "")
+                organism_id = \
+                    database_orf.database_organism_checker(organism_name)
+                string_builder_table += (str(organism_id) + '\n')
             else:
-                organism_name = re.search("(?<=\[).+?(?=\])", hit.description).group()
-                organism_id = database_orf.database_organism_checker(organism_name)
-                list_results.append(organism_id)
-            list_result_all.append(list_results)
+                organism_name = re.search("(?<=\[).+?(?=\])",
+                                          hit.description).group()
+                organism_id = \
+                    database_orf.database_organism_checker(organism_name)
+                string_builder_table += (str(organism_id) + '\n')
 
-    print(list_result_all)
-    print(string_builder_table)
-
-    return list_result_all, string_builder_table
+    return string_builder_table
 
 
 main()
