@@ -102,8 +102,8 @@ def database_orf_checker(orf):
 
 def database_dna_data_id_checker():
     """
-    De functie database_dna_data
-    :return: 
+    De functie database_dna_data haalt de hoogste DNA_seq_id op
+    :return: de hoogste DNA_seq_id
     """
     conn = mysql.connector.connect(
         host="hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com",
