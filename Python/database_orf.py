@@ -31,7 +31,8 @@ def database_collect(table):
         db="rohtv", password='pwd123')
     cursor = conn.cursor()
     # cursor.execute(f"""select * from {table}""")
-    cursor.execute(f"""select * from {table} join dna_data dd on orfs.DNA_seq_ID = dd.DNA_seq_ID;""")
+    cursor.execute(f"""select * from {table} join dna_data dd on 
+                       orfs.DNA_seq_ID = dd.DNA_seq_ID;""")
     rows = cursor.fetchall()
     string_builder = ""
     for x in rows:
