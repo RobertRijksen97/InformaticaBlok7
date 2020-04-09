@@ -3,7 +3,7 @@
 # Datum: 06-04-2020
 
 import mysql.connector
-
+import sys
 
 def database_connector():
     """
@@ -30,21 +30,21 @@ def database_collect(table):
         user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
         db="rohtv", password='pwd123')
     cursor = conn.cursor()
-    cursor.execute(f"""select * from {table} join dna_data dd on 
-                       orfs.DNA_seq_ID = dd.DNA_seq_ID;""")
+    cursor.execute("""select * from {}""".format(table))
+    # cursor.execute("""select * from {} join dna_data dd on orfs.DNA_seq_ID = dd.DNA_seq_ID;""".format(table))
     rows = cursor.fetchall()
     string_builder = ""
     for x in rows:
         new_string = '\t'.join(str(b) for b in x)
         string_builder += new_string + "\n"
 
-    return string_builder
+    print(string_builder)
 
 
-def database_dna_collect(id):
+def database_dna_collect(dna_id):
     """
     De functie database_dna_collect haalt de DNA sequentie op uit dna table
-    :param id: de id die opgehaald moet worden
+    :param dna_id: de id die opgehaald moet worden
     ":return de DNA sequentie
     """
     conn = mysql.connector.connect(
@@ -53,9 +53,26 @@ def database_dna_collect(id):
         db="rohtv", password='pwd123')
     cursor = conn.cursor()
     # cursor.execute(f"""select * from {table}""")
-    cursor.execute(f"""select DNA_sequentie from dna_data where DNA_seq_ID 
-                       like {id};""")
-    return cursor.fetchall()[0][0]
+    cursor.execute("""select DNA_sequentie from dna_data where DNA_seq_ID 
+                       like {};""".format(dna_id))
+    info = cursor.fetchall()[0][0]
+    print(info)
+    return info
+
+def database_dna_data_id_checker():
+    """
+    De functie database_dna_data
+    :return:
+    """
+    conn = mysql.connector.connect(
+        host="hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com",
+        user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
+        db="rohtv", password='pwd123')
+    cursor = conn.cursor()
+    cursor.execute("select max(DNA_seq_ID) from dna_data;")
+    latest_id = cursor.fetchall()[0][0]
+    print(latest_id)
+    return latest_id
 
 
 def database_update(table, info):
@@ -70,8 +87,10 @@ def database_update(table, info):
         user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
         db="rohtv", password='pwd123')
     cursor = conn.cursor()
+    # inf = info.replace("\t", ", ")
+    info = info.split("\t")
     new_info = ", ".join(repr(e) for e in info)
-    cursor.execute(f"""insert into {table} value ({new_info});""")
+    cursor.execute("""insert into {} value ({});""".format(table, new_info))
     conn.commit()
 
 
@@ -87,18 +106,40 @@ def database_organism_checker(organism):
         user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
         db="rohtv", password='pwd123')
     cursor = conn.cursor()
-    cursor.execute(f"select Organisme_ID from organisme where Organisme_Naam "
-                   f"like '{organism}';")
+    cursor.execute("select Organisme_ID from organisme where Organisme_Naam "
+                   "like '{}';".format(organism))
     try:
-        return cursor.fetchall()[0][0]
+        id = cursor.fetchall()[0][0]
+        print(id)
+        return id
     except IndexError:
         cursor.execute("select max(Organisme_ID) from organisme;")
         new_id = cursor.fetchall()[0][0] + 1
         info = [new_id, organism]
         new_info = ", ".join(repr(e) for e in info)
-        cursor.execute(f"""insert into organisme value ({new_info});""")
+        cursor.execute("""insert into organisme value ({});""".format(new_info))
         conn.commit()
+        print(new_id)
         return new_id
+
+
+def database_organism_name_checker(org_id):
+    """
+    De functie database_organism_checker checkt in de table "organisme" welk
+    organisme bij een gegeven organisme id hoort
+    :param orgid: Het organisme id
+    :return: Het organisme_ID wat de PK in de table is.
+    """
+    conn = mysql.connector.connect(
+        host="hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com",
+        user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
+        db="rohtv", password='pwd123')
+    cursor = conn.cursor()
+    cursor.execute("select Organisme_Naam from organisme where Organisme_ID "
+               "like '{}';".format(org_id))
+    organism = cursor.fetchall()[0][0]
+    print(organism)
+    return organism
 
 
 def database_orf_checker(orf):
@@ -112,36 +153,7 @@ def database_orf_checker(orf):
         user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
         db="rohtv", password='pwd123')
     cursor = conn.cursor()
-    cursor.execute(f"select ORFs_ID from orfs where ORFs like '{orf}';")
-    return cursor.fetchall()[0][0]
-
-
-def database_dna_data_id_checker():
-    """
-    De functie database_dna_data haalt de hoogste DNA_seq_id op
-    :return: de hoogste DNA_seq_id
-    """
-    conn = mysql.connector.connect(
-        host="hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com",
-        user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
-        db="rohtv", password='pwd123')
-    cursor = conn.cursor()
-    cursor.execute("select max(DNA_seq_ID) from dna_data;")
-    return cursor.fetchall()[0][0]
-
-
-def database_orf_id_checker():
-    """
-    De functie database_orf_id_checker haalt de laatste orf_id op uit de table
-    orfs
-    :return:de laatste orf_id
-    """
-    conn = mysql.connector.connect(
-        host="hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com",
-        user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
-        db="rohtv", password='pwd123')
-    cursor = conn.cursor()
-    cursor.execute(f"select max(ORFs_ID) from orfs;")
+    cursor.execute("select ORFs_ID from orfs where ORFs like '{}';".format(orf))
     return cursor.fetchall()[0][0]
 
 
@@ -157,7 +169,9 @@ def database_blastid_checker():
         db="rohtv", password='pwd123')
     cursor = conn.cursor()
     cursor.execute("select max(BLAST_ID) from blastresultsorf;")
-    return cursor.fetchall()[0][0]
+    info = cursor.fetchall()[0][0]
+    print(info)
+    return info
 
 
 def database_delete(table, sort_id, number_id):
@@ -174,9 +188,23 @@ def database_delete(table, sort_id, number_id):
         user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
         db="rohtv", password='pwd123')
     cursor = conn.cursor()
-    cursor.execute(f"delete from {table} where {sort_id} like "
-                   f"{number_id};")
+    cursor.execute("delete from {} where {} like {};".format(table, sort_id, number_id))
     conn.commit()
+
+
+def database_orf_id_checker():
+    """
+    De functie database_orf_id_checker haalt de laatste orf_id op uit de table
+    orfs
+    :return:de laatste orf_id
+    """
+    conn = mysql.connector.connect(
+        host="hannl-hlo-bioinformatica-mysqlsrv.mysql.database.azure.com",
+        user="rohtv@hannl-hlo-bioinformatica-mysqlsrv",
+        db="rohtv", password='pwd123')
+    cursor = conn.cursor()
+    cursor.execute("select max(ORFs_ID) from orfs;")
+    print(cursor.fetchall()[0][0])
 
 
 def string_to_list_converter(string):
@@ -192,9 +220,33 @@ def string_to_list_converter(string):
     for i in range(len(string_list)):
         new_i = string_list[i].replace("\t", ",").split(",")
         results_list.append([])
-        for x in range(len(new_i)):
-            try:
-                results_list[i].append(int(new_i[x]))
-            except ValueError:
-                results_list[i].append(new_i[x])
+    for x in range(len(new_i)):
+        try:
+            results_list[i].append(int(new_i[x]))
+        except ValueError:
+            results_list[i].append(new_i[x])
     return results_list
+
+
+def main():
+    if sys.argv[1] == "collect":
+        database_collect(sys.argv[2])
+    elif sys.argv[1] == "save":
+        database_update(sys.argv[2], sys.argv[3])
+    elif sys.argv[1] == "delete":
+        database_delete(sys.argv[2], sys.argv[3])
+    elif sys.argv[1] == "latestID":
+        database_orf_id_checker()
+    elif sys.argv[1] == "latestDna":
+        database_dna_data_id_checker()
+    elif sys.argv[1] == "checkOrg":
+        database_organism_checker(sys.argv[2])
+    elif sys.argv[1] == "collect_dna":
+        database_dna_collect(sys.argv[2])
+    elif sys.argv[1] == "latestBlast":
+        database_blastid_checker()
+    elif sys.argv[1] == "getOrgName":
+        database_organism_name_checker(sys.argv[2])
+
+
+main()
