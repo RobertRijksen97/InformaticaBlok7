@@ -9,6 +9,7 @@ import java.awt.event.*;
 import java.io.*;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,7 +17,7 @@ import java.util.regex.Pattern;
 class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowListener {
     private static JButton browseBt, databaseBt, startOrfBt, saveDatabaseBt, blastNtBt, blastProtBt, goBackBt, dbGoBackBt, selectAllBlastBt, selectAllOrfBt;
     private static JTextField fileTf, orfLengthTf;
-    private static JLabel orfNameLb, dbOrfNameLb, nrSelectedLb,  blastNrSelectedLb;
+    private static JLabel orfNameLb, dbOrfNameLb, nrSelectedLb, blastNrSelectedLb;
     private static JPanel tabelPnl, blastResultsPnl, dbSeqPnl, orfExtInfPnl, orfInfoPnl;
     private static JComboBox strandBox, readFrmBox, databaseNtBox, databaseProtBox, databaseEntryBox;
     private static JRadioButton blastpRb, blastnRb;
@@ -42,6 +43,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * Makes a table containing ORF data.
+     *
      * @return a 2 dimensional Object array containing ORF data
      */
     private static Object[][] makeDbOrfTableData() {
@@ -60,9 +62,10 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * Calls a function in the database_orf.py file.
+     *
      * @param function the function to be called.
-     * @param arg2 argument 1.
-     * @param arg3 argument 2.
+     * @param arg2     argument 1.
+     * @param arg3     argument 2.
      * @return returns a String containing the output from the function called.
      * @throws IOException
      * @throws InterruptedException
@@ -86,34 +89,44 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * Calls the BLAST.py file.
-     * @param blast The blast type to be executed.
-     * @param db the database to be called.
+     *
+     * @param blast   The blast type to be executed.
+     * @param db      the database to be called.
      * @param toBlast the sequence to be BLASTed.
-     * @param id the ORF id.
+     * @param id      the ORF id.
      * @return String containing blast results seperated by tab.
      * @throws IOException
      * @throws InterruptedException
      */
     private static String useBlastPython(String blast, String db, String toBlast, int id) throws IOException, InterruptedException {
+        TimeUnit.SECONDS.sleep(45);
         StringBuilder pythonReturn = new StringBuilder();
+        System.out.println("blast start now");
         ProcessBuilder processbuild = new ProcessBuilder().command("python", System.getProperty("user.dir") + "/src/ProjectBlok7/BLAST.py", blast, db, toBlast, Integer.toString(id));
         Process p = processbuild.start();
         p.waitFor();
-
+        System.out.println("blast done now");
         System.out.println("Exitcode" + p.exitValue());
         String line;
         BufferedReader inputreader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        while ((line = inputreader.readLine()) != null)
-            pythonReturn.append(line);
+        while ((line = inputreader.readLine()) != null) {
+            System.out.println("begin line");
+            pythonReturn.append(line).append("\n");
+            System.out.println(line);
+            System.out.println("end line");
+        }
         BufferedReader errorreader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
         System.out.println("\nPython errors:");
         while ((line = errorreader.readLine()) != null)
             System.out.println(line);
+        System.out.println(pythonReturn);
+        System.out.println(Arrays.toString(pythonReturn.toString().split("\n")));
         return pythonReturn.toString();
     }
 
     /**
      * Makes data used by the table in de database.
+     *
      * @return returns data used by the table in de database.
      */
     private static Object[][] makeDbBlastTableData() {
@@ -132,6 +145,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * Collects data from the database.
+     *
      * @throws IOException
      * @throws InterruptedException
      */
@@ -157,6 +171,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * Makes a BLAST result with data from the database.
+     *
      * @param blastInfo A string array containing info about the blast result.
      * @return returns a BlastResultaat class object.
      * @throws IOException
@@ -175,7 +190,8 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * Makes an ORF result with data from the database.
-     * @param orfInfo  string array containing info about an ORF.
+     *
+     * @param orfInfo string array containing info about an ORF.
      * @return returns a OrfResultaat class object.
      * @throws IOException
      * @throws InterruptedException
@@ -194,15 +210,16 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * Makes a blast result using data from a BLAST result.
-     * @param f A string array containing data from a BLAST result.
+     *
+     * @param f  A string array containing data from a BLAST result.
      * @param id an ORF id.
      * @return returns a BlastResultaat class object.
      */
-    private static BlastResultaat makeBlastResult(String[] f, int id) {
+    private static BlastResultaat makeBlastResult(String[] f, int id) throws IOException, InterruptedException {
         BlastResultaat blastRes = new BlastResultaat();
         blastRes.setId(id);
         blastRes.setDescription(f[1]);
-        blastRes.setOrganism(f[5]);
+        blastRes.setOrganism(useDbPython("getOrgName", f[5], ""));
         blastRes.setPercIdentity(Integer.parseInt(f[3]));
         blastRes.seteValue(f[2]);
         blastRes.setAccesion(f[0]);
@@ -211,6 +228,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * Turns selected path in a sequence.
+     *
      * @return a DNA sequence.
      * @throws IOException
      */
@@ -228,6 +246,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * checks if a given string is dna.
+     *
      * @param seqGiven a string containing a sequence.
      * @return a boolean. true means the given sequence is dna.
      */
@@ -242,6 +261,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * detemines orfs.
+     *
      * @throws IOException
      * @throws InterruptedException
      */
@@ -289,6 +309,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * reverses a string.
+     *
      * @param seqGiven a string to be reversed.
      * @return a reversed string.
      */
@@ -302,10 +323,11 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * looks for orfs in a given sequence.
-     * @param sequence string containing a sequence.
+     *
+     * @param sequence     string containing a sequence.
      * @param minOrfLength minimal orf length.
-     * @param orfsFound amount of orfs found.
-     * @param strand the strand(s) to be searched.
+     * @param orfsFound    amount of orfs found.
+     * @param strand       the strand(s) to be searched.
      * @return number of orfs found.
      */
     public static int findORFs(String sequence, String minOrfLength, int orfsFound, String strand) {
@@ -323,11 +345,12 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * turns data into an orf result.
-     * @param m contains info about the found orf.
+     *
+     * @param m         contains info about the found orf.
      * @param orfsFound number of orfs found.
-     * @param strand the strand of the found orf.
-     * @param frame the frame of the found orf.
-     * @param sequence the sequence of the found orf.
+     * @param strand    the strand of the found orf.
+     * @param frame     the frame of the found orf.
+     * @param sequence  the sequence of the found orf.
      * @return an OrfResultaat class object.
      */
     private static OrfResultaat makeOrfResult(Matcher m, int orfsFound, String strand, int frame, String sequence) {
@@ -348,6 +371,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * makes data for the table containing info about the found orfs.
+     *
      * @return a 2 dimensional object array containing orf data.
      */
     private static Object[][] getOrfTableData() {
@@ -730,16 +754,17 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * returns given GridBagConstraints.
-     * @param fill fill
+     *
+     * @param fill      fill
      * @param gridwidth gridwith
-     * @param gridy gridy
-     * @param gridx gridx
-     * @param ipady ipday
-     * @param ipadx ipadx
-     * @param weighty weigthy
-     * @param weightx weightx
-     * @param insets insets
-     * @param anchor anchor
+     * @param gridy     gridy
+     * @param gridx     gridx
+     * @param ipady     ipday
+     * @param ipadx     ipadx
+     * @param weighty   weigthy
+     * @param weightx   weightx
+     * @param insets    insets
+     * @param anchor    anchor
      * @return GridBagConstraints.
      */
     private GridBagConstraints getConstraints(int fill, int gridwidth, int gridy, int gridx, int ipady,
@@ -761,6 +786,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * Determines what happens when the "Blast" button is clicked.
+     *
      * @param blastType the type of BLAST to be used (0 = Protein BLAST; 1 = Nucleotide BLAST)
      */
     private void blastClicked(int blastType) {
@@ -791,24 +817,23 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
                 Object[][] tableData = new Object[blastResultaat.size()][8];
                 System.out.println("blast REsults:::");
                 for (BlastResultaat bl : blastResultaat.values()) {
-                    System.out.println("id: ");
-                    System.out.print(bl.getId());
-                    System.out.println("evalue: ");
-                    System.out.print(bl.geteValue());
-                    System.out.println("organism: ");
-                    System.out.print(bl.getOrganism());
-                    System.out.println("descripton: ");
-                    System.out.print(bl.getDescription());
-                    System.out.println("perc iden: ");
-                    System.out.print(bl.getPercIdentity());
-                    System.out.println("accesion: ");
-                    System.out.print(bl.getAccesion());
+                    System.out.print("id: ");
+                    System.out.println(bl.getId());
+                    System.out.print("evalue: ");
+                    System.out.println(bl.geteValue());
+                    System.out.print("organism: ");
+                    System.out.println(bl.getOrganism());
+                    System.out.print("descripton: ");
+                    System.out.println(bl.getDescription());
+                    System.out.print("perc iden: ");
+                    System.out.println(bl.getPercIdentity());
+                    System.out.print("accesion: ");
+                    System.out.println(bl.getAccesion());
                 }
                 try {
                     int counter = 0;
                     for (BlastResultaat blastRes : blastResultaat.values()) {
-                        String org = useDbPython("getOrgName", blastRes.getOrganism(), "");
-                        tableData[counter] = new Object[]{"", blastRes.getId(), blastRes.geteValue(), org, blastRes.getDescription(), blastRes.getPercIdentity(), blastRes.getAccesion()};
+                        tableData[counter] = new Object[]{"", blastRes.getId(), blastRes.geteValue(), blastRes.getOrganism(), blastRes.getDescription(), blastRes.getPercIdentity(), blastRes.getAccesion()};
                         counter++;
                     }
                 } catch (NullPointerException e) {
@@ -835,6 +860,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * Determines what blast to be used.
+     *
      * @param blastType the type of BLAST to be used (0 = Protein BLAST; 1 = Nucleotide BLAST)
      * @throws IOException
      * @throws InterruptedException
@@ -861,8 +887,9 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * BLASTS the selected ORFs
-     * @param blast The blast to be used
-     * @param db the database to be used
+     *
+     * @param blast     The blast to be used
+     * @param db        the database to be used
      * @param blastType the blasttype to be used
      * @throws InterruptedException
      * @throws IOException
@@ -883,14 +910,13 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
                 saveSeqToDatabase();
                 saveToDatabase(orfResult.get(Integer.toString((Integer) orfInfoTb.getValueAt(i, 1))), id);
                 String[] pythonReturn = useBlastPython(blast, db, toBlast, id).split("\n");
-
-                try {
-                    for (String q : pythonReturn) {
-                        String[] f = q.split("\t");
-                        System.out.println(Arrays.toString(f));
+                for (String q : pythonReturn) {
+                    String[] f = q.split("\t");
+                    System.out.println(Arrays.toString(f));
+                    try {
                         blastResultaat.put(f[0], makeBlastResult(f, (Integer) orfInfoTb.getValueAt(i, 1)));
+                    } catch (ArrayIndexOutOfBoundsException ignore) {
                     }
-                } catch (ArrayIndexOutOfBoundsException ignore) {
                 }
             }
         }
@@ -898,6 +924,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * sets the database window
+     *
      * @param selected the selected window
      */
     private void setDatabaseWindow(int selected) {
@@ -926,8 +953,9 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * A warning pannel pop up
+     *
      * @param message the message to be displayed
-     * @param title the title of the message box
+     * @param title   the title of the message box
      * @return the button clicked.
      */
     private int warningPanel(String message, String title) {
@@ -936,8 +964,9 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * saves orf to the databse
+     *
      * @param orf OrfResultaat class object
-     * @param id orf id
+     * @param id  orf id
      * @throws IOException
      * @throws InterruptedException
      */
@@ -949,6 +978,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * used to save a sequence to the database.
+     *
      * @throws IOException
      * @throws InterruptedException
      */
@@ -959,6 +989,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
 
     /**
      * saves selected orf/blast results to the database.
+     *
      * @throws IOException
      * @throws InterruptedException
      */
@@ -985,11 +1016,10 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
         } else if (panelstate == 1) {
             for (int i = 0; i < blastTable.getRowCount(); i++) {
                 if (!blastTable.getValueAt(i, 0).equals("")) {
-                    BlastResultaat blastRes = blastResultaat.get(Integer.toString((Integer) blastTable.getValueAt(i, 1)));
-                    String orgId = useDbPython("checkOrg", blastRes.getOrganism(), "");
-                    int blastid = Integer.parseInt(useDbPython("latestBlast", "", "")) + 1;
+                    BlastResultaat blastRes = blastResultaat.get(blastTable.getValueAt(i, 6).toString());
+                    String orgId = useDbPython("checkOrg", blastRes.getOrganism(), "1");
+                    int blastid = Integer.parseInt(useDbPython("latestBlast", "", "").strip()) + 1;
                     info = blastRes.getAccesion() + "\t" + blastRes.getDescription() + "\t" + blastRes.geteValue() + "\t" + blastRes.getPercIdentity() + "\t" + blastRes.getId() + "\t" + blastid + "\t" + orgId;
-
                     useDbPython("save", "blastresultsorf", info);
                 }
             }
@@ -1093,9 +1123,9 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
         else if (e.getSource() == blastProtBt)
             blastClicked(1);
         else if (e.getSource() == selectAllOrfBt)
-          selectAllOrf();
-         else if (e.getSource() == selectAllBlastBt)
-           selectAllBlast();
+            selectAllOrf();
+        else if (e.getSource() == selectAllBlastBt)
+            selectAllBlast();
         else if (e.getSource() == browseBt)
             chooseFile();
         else if (e.getSource() == startOrfBt)

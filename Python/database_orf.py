@@ -90,11 +90,12 @@ def database_update(table, info):
     # inf = info.replace("\t", ", ")
     info = info.split("\t")
     new_info = ", ".join(repr(e) for e in info)
+    print(new_info)
     cursor.execute("""insert into {} value ({});""".format(table, new_info))
     conn.commit()
 
 
-def database_organism_checker(organism):
+def database_organism_checker(organism, prin):
     """
     De functie database_organism_checker checkt in de table "organisme" of deze
     bestaat
@@ -109,17 +110,19 @@ def database_organism_checker(organism):
     cursor.execute("select Organisme_ID from organisme where Organisme_Naam "
                    "like '{}';".format(organism))
     try:
-        id = cursor.fetchall()[0][0]
-        print(id)
-        return id
+        org_id = cursor.fetchall()[0][0]
+        if prin == "1":
+            print(org_id)
+        return org_id
     except IndexError:
         cursor.execute("select max(Organisme_ID) from organisme;")
-        new_id = cursor.fetchall()[0][0] + 1
+        new_id = (cursor.fetchall()[0][0] + 1)
         info = [new_id, organism]
         new_info = ", ".join(repr(e) for e in info)
         cursor.execute("""insert into organisme value ({});""".format(new_info))
         conn.commit()
-        print(new_id)
+        if prin == "1":
+            print(new_id)
         return new_id
 
 
@@ -240,7 +243,7 @@ def main():
     elif sys.argv[1] == "latestDna":
         database_dna_data_id_checker()
     elif sys.argv[1] == "checkOrg":
-        database_organism_checker(sys.argv[2])
+        database_organism_checker(sys.argv[2], sys.argv[3])
     elif sys.argv[1] == "collect_dna":
         database_dna_collect(sys.argv[2])
     elif sys.argv[1] == "latestBlast":
