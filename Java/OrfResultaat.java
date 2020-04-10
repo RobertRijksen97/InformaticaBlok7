@@ -1,5 +1,3 @@
-package ProjectBlok7;
-
 import java.util.HashMap;
 
 public class OrfResultaat extends Resultaat {
@@ -11,42 +9,82 @@ public class OrfResultaat extends Resultaat {
     private String dnaSeq;
     private String totalDnaSeq;
 
+    /**
+     * returns the whole dna sequence.
+     * @return string containing whole dna sequence.
+     */
     public String getTotalDnaSeq() {
         return this.totalDnaSeq;
     }
 
+    /**
+     * sets the whole dna sequence.
+     * @param totalDnaSeq string containing whole dna sequence.
+     */
     public void setTotalDnaSeq(String totalDnaSeq) {
         this.totalDnaSeq = totalDnaSeq;
     }
 
+    /**
+     * returns frame
+     * @return int containing frame.
+     */
     public int getFrame() {
         return frame;
     }
 
+    /**
+     * sets frame
+     * @param frame int containing frame
+     */
     public void setFrame(int frame) {
         this.frame = frame;
     }
 
+    /**
+     * gets strand.
+     * @return strand
+     */
     public String getStrand() {
         return strand;
     }
 
+    /**
+     * sets strand.
+     * @param strand strand.
+     */
     public void setStrand(String strand) {
         this.strand = strand;
     }
 
+    /**
+     * get start position
+     * @return start position
+     */
     public int getStart() {
         return start;
     }
 
+    /**
+     * sets start position
+     * @param start start position
+     */
     public void setStart(int start) {
         this.start = start;
     }
 
+    /**
+     * gets stop position
+     * @return stop position
+     */
     public int getStop() {
         return stop;
     }
 
+    /**
+     * sets stop position
+     * @param stop stop position
+     */
     public void setStop(int stop) {
         this.stop = stop;
     }
@@ -57,24 +95,44 @@ public class OrfResultaat extends Resultaat {
     static final HashMap<String,String> codonTable = new HashMap<>();
 
 
+    /**
+     * sets orf id
+     */
     OrfResultaat() {
         setId(orfNr++);
     }
 
+    /**
+     * gets orf length
+     * @return orf length
+     */
     public int getLength() {
         if (this.getStrand().equals("+"))
             return this.stop - this.start;
         return this.start - this.stop;
     }
 
+    /**
+     * gets orf dna sequence
+     * @return orf dna sequence
+     */
     public String getDnaSeq() {
         return dnaSeq;
     }
 
+    /**
+     * sets orf dna sequence
+     * @param dnaSeq orf dna sequence
+     */
     public void setDnaSeq(String dnaSeq) {
         this.dnaSeq = dnaSeq;
     }
 
+    /**
+     * gets animo acid sequence.
+     * @param dnaSequence dna sequence
+     * @return amino acid sequence
+     */
     public String getAminoSeq(String dnaSequence) {
         codonTable.put("TTT","P");codonTable.put("CCT","P");codonTable.put("AAC","N");codonTable.put("GGA","G");
         codonTable.put("TTC","F");codonTable.put("CCC","P");codonTable.put("AAA","K");codonTable.put("GGG","G");

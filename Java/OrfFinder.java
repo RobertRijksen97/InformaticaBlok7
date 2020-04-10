@@ -1,5 +1,3 @@
-package ProjectBlok7;
-
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
@@ -67,12 +65,12 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
      * @param arg2     argument 1.
      * @param arg3     argument 2.
      * @return returns a String containing the output from the function called.
-     * @throws IOException
-     * @throws InterruptedException
+     * @throws IOException called when procces is not valid.
+     * @throws InterruptedException called when procces gets interupted.
      */
-    private static String useDbPython(String function, String arg2, String arg3) throws IOException, InterruptedException {
+    private static String useDbPython(String function, String arg2, String arg3) throws InterruptedException, IOException {
         StringBuilder pythonReturn = new StringBuilder();
-        ProcessBuilder processbuild = new ProcessBuilder().command("python", System.getProperty("user.dir") + "/src/ProjectBlok7/database_orf.py", function, arg2, arg3);
+        ProcessBuilder processbuild = new ProcessBuilder().command("python", System.getProperty("user.dir") + File.separator + "src" + File.separator + "database_orf.py", function, arg2, arg3);
         Process p = processbuild.start();
         p.waitFor();
         System.out.println("Exitcode" + p.exitValue());
@@ -95,14 +93,14 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
      * @param toBlast the sequence to be BLASTed.
      * @param id      the ORF id.
      * @return String containing blast results seperated by tab.
-     * @throws IOException
-     * @throws InterruptedException
+     * @throws IOException called when procces is not valid.
+     * @throws InterruptedException called when procces gets interupted.
      */
     private static String useBlastPython(String blast, String db, String toBlast, int id) throws IOException, InterruptedException {
         TimeUnit.SECONDS.sleep(45);
         StringBuilder pythonReturn = new StringBuilder();
         System.out.println("blast start now");
-        ProcessBuilder processbuild = new ProcessBuilder().command("python", System.getProperty("user.dir") + "/src/ProjectBlok7/BLAST.py", blast, db, toBlast, Integer.toString(id));
+        ProcessBuilder processbuild = new ProcessBuilder().command("python", System.getProperty("user.dir") + File.separator + "src" + File.separator + "BLAST.py", blast, db, toBlast, Integer.toString(id));
         Process p = processbuild.start();
         p.waitFor();
         System.out.println("blast done now");
@@ -146,16 +144,14 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
     /**
      * Collects data from the database.
      *
-     * @throws IOException
-     * @throws InterruptedException
+     * @throws IOException called when procces is not valid.
+     * @throws InterruptedException called when procces gets interupted.
      */
     private static void getDatabaseInfo() throws IOException, InterruptedException {
         String[] info = useDbPython("collect", "ORFs", "").split("\n");
         dbOrfResultaat = new HashMap<>(info.length);
         for (String i : info) {
-            System.out.println(i);
             String[] f = i.split("\t");
-            System.out.println(Arrays.toString(f));
             if (f.length != 1)
                 dbOrfResultaat.put(f[1], makeDbOrftResult(f));
         }
@@ -174,8 +170,8 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
      *
      * @param blastInfo A string array containing info about the blast result.
      * @return returns a BlastResultaat class object.
-     * @throws IOException
-     * @throws InterruptedException
+     * @throws IOException called when procces is not valid.
+     * @throws InterruptedException called when procces gets interupted.
      */
     private static BlastResultaat makeDbBlastResult(String[] blastInfo) throws IOException, InterruptedException {
         BlastResultaat blastRes = new BlastResultaat();
@@ -193,8 +189,8 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
      *
      * @param orfInfo string array containing info about an ORF.
      * @return returns a OrfResultaat class object.
-     * @throws IOException
-     * @throws InterruptedException
+     * @throws IOException called when procces is not valid.
+     * @throws InterruptedException called when procces gets interupted.
      */
     private static OrfResultaat makeDbOrftResult(String[] orfInfo) throws IOException, InterruptedException {
         OrfResultaat orf = new OrfResultaat();
@@ -230,7 +226,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
      * Turns selected path in a sequence.
      *
      * @return a DNA sequence.
-     * @throws IOException
+     * @throws IOException called when file does not exist.
      */
     private static String readPath() throws IOException {
         StringBuilder seq = new StringBuilder();
@@ -262,12 +258,12 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
     /**
      * detemines orfs.
      *
-     * @throws IOException
-     * @throws InterruptedException
+     * @throws IOException called when procces is not valid.
+     * @throws InterruptedException called when procces gets interupted.
      */
     private static void determineOrfs() throws IOException, InterruptedException {
         orfResult = new HashMap<>();
-        int orfsFound = Integer.parseInt(useDbPython("latestID", "", "").strip());
+        int orfsFound = Integer.parseInt(useDbPython("latestID", "", "").replace("\n", ""));
         try {
             if (path.getName().equals(fileTf.getText()))
                 seq = readPath();
@@ -815,21 +811,6 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
                 blastSearch(blastType);
 
                 Object[][] tableData = new Object[blastResultaat.size()][8];
-                System.out.println("blast REsults:::");
-                for (BlastResultaat bl : blastResultaat.values()) {
-                    System.out.print("id: ");
-                    System.out.println(bl.getId());
-                    System.out.print("evalue: ");
-                    System.out.println(bl.geteValue());
-                    System.out.print("organism: ");
-                    System.out.println(bl.getOrganism());
-                    System.out.print("descripton: ");
-                    System.out.println(bl.getDescription());
-                    System.out.print("perc iden: ");
-                    System.out.println(bl.getPercIdentity());
-                    System.out.print("accesion: ");
-                    System.out.println(bl.getAccesion());
-                }
                 try {
                     int counter = 0;
                     for (BlastResultaat blastRes : blastResultaat.values()) {
@@ -862,8 +843,8 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
      * Determines what blast to be used.
      *
      * @param blastType the type of BLAST to be used (0 = Protein BLAST; 1 = Nucleotide BLAST)
-     * @throws IOException
-     * @throws InterruptedException
+     * @throws IOException called when procces is not valid.
+     * @throws InterruptedException called when procces gets interupted.
      */
     private void blastSearch(int blastType) throws IOException, InterruptedException {
         String blast = "";
@@ -891,8 +872,8 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
      * @param blast     The blast to be used
      * @param db        the database to be used
      * @param blastType the blasttype to be used
-     * @throws InterruptedException
-     * @throws IOException
+     * @throws IOException called when procces is not valid.
+     * @throws InterruptedException called when procces gets interupted.
      */
     private void blastpython(String blast, String db, int blastType) throws InterruptedException, IOException {
         blastResultaat = new HashMap<>();
@@ -912,7 +893,6 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
                 String[] pythonReturn = useBlastPython(blast, db, toBlast, id).split("\n");
                 for (String q : pythonReturn) {
                     String[] f = q.split("\t");
-                    System.out.println(Arrays.toString(f));
                     try {
                         blastResultaat.put(f[0], makeBlastResult(f, (Integer) orfInfoTb.getValueAt(i, 1)));
                     } catch (ArrayIndexOutOfBoundsException ignore) {
@@ -967,8 +947,8 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
      *
      * @param orf OrfResultaat class object
      * @param id  orf id
-     * @throws IOException
-     * @throws InterruptedException
+     * @throws IOException called when procces is not valid.
+     * @throws InterruptedException called when procces gets interupted.
      */
     private void saveToDatabase(OrfResultaat orf, int id) throws IOException, InterruptedException {
         String latestId = useDbPython("latestDna", "", "");
@@ -979,19 +959,19 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
     /**
      * used to save a sequence to the database.
      *
-     * @throws IOException
-     * @throws InterruptedException
+     * @throws IOException called when procces is not valid.
+     * @throws InterruptedException called when procces gets interupted.
      */
     private void saveSeqToDatabase() throws IOException, InterruptedException {
-        String latestId = Integer.toString((Integer.parseInt(useDbPython("latestDna", "", "").strip()) + 1));
+        String latestId = Integer.toString((Integer.parseInt(useDbPython("latestDna", "", "").replace("\n", "")) + 1));
         useDbPython("save", "dna_data", seq + "\t" + latestId);
     }
 
     /**
      * saves selected orf/blast results to the database.
      *
-     * @throws IOException
-     * @throws InterruptedException
+     * @throws IOException called when procces is not valid.
+     * @throws InterruptedException called when procces gets interupted.
      */
     private void saveSelectedToDatabase() throws IOException, InterruptedException {
         if (warningPanel("You are about to save the selected entry's to the database.\nThis will close the database window if it's open!", "Save warning") != JOptionPane.YES_OPTION)
@@ -1018,7 +998,7 @@ class OrfFinder extends JFrame implements ActionListener, MouseListener, WindowL
                 if (!blastTable.getValueAt(i, 0).equals("")) {
                     BlastResultaat blastRes = blastResultaat.get(blastTable.getValueAt(i, 6).toString());
                     String orgId = useDbPython("checkOrg", blastRes.getOrganism(), "1");
-                    int blastid = Integer.parseInt(useDbPython("latestBlast", "", "").strip()) + 1;
+                    int blastid = Integer.parseInt(useDbPython("latestBlast", "", "").replace("\n", "")) + 1;
                     info = blastRes.getAccesion() + "\t" + blastRes.getDescription() + "\t" + blastRes.geteValue() + "\t" + blastRes.getPercIdentity() + "\t" + blastRes.getId() + "\t" + blastid + "\t" + orgId;
                     useDbPython("save", "blastresultsorf", info);
                 }
